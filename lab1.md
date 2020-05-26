@@ -27,7 +27,7 @@ FAIT
 ### Sensibilisation au secure coding
 
 - **Quel est d'après vous l'utilité de ce code ? Et quel problème pouvez vous déjà pressentir avec ce code ?**
-	Ce code permet de verifier si on peut se connecter à une adresse ip donnée en argument.
+	Ce code permet de verifier si on peut se connecter (pinger) à une adresse ip donnée en argument.
 
 - **Vérifiez que vous pouvez atteindre ce fichier localement depuis Firefox, via l'adresse `http://localhost/concheck.php`.**
 
@@ -37,7 +37,7 @@ FAIT
 
 	![](img/conncheck2.png)
 
-Le ping fait peut atteindre l'ip 127.0.0.1 qui est l'adresse du localhost.
+Le ping effectué par le code peut atteindre l'ip 127.0.0.1 qui est l'adresse du localhost.
 
 - **Essayez à présent d'accéder à l'URL http://localhost/concheck.php?ip=127.0.0.1;cat%20/etc/passwd. Qu'observez-vous et pourquoi ?**
 
@@ -107,7 +107,7 @@ useradd ken
 
 	![](img/POSIX3.png)
 
-	On constate que les droits d'execution ne se sont pas propagé. Mesure de sécurité?
+	On constate que les droits d'execution ne se sont pas propagé alors qu'on avait précédemment demnadé la récursivité (propagation) des droits. Il pourrait s'agir d'une mesure de sécurité qui empêche la search permission de se propager automatiquement.
 
 - **Vérifiez que cette page web est bien accessible localement avec `curl`**
 
@@ -126,13 +126,17 @@ useradd ken
 
 	![](img/curl2.png)
 
-	L'accès nous est interdit. SELinux nous bloque l'accès à cette page.
+	L'accès nous est interdit CAR SELinux nous bloque l'accès à cette page.
 
 - **Analysez les journaux applicatifs access_log et error_log de httpd. Que révèlent-ils ?**
+	Capture de l'access_log
 	![](img/access_log.png)
+
+	Capture de l'error_log
 	![](img/error_log.png)
 
 	Ils révèlent l'échec de nos trois dernières tentatives de connexion.
+	L'access_log montre les codes d'erreurs levés par la requête HTTP qui a échoué.
 	L'error_log précisent que les search permissions ne sont pas activées pour index.html c'est pourquoi l'accès nous est refusé.
 
 - **Utilisez journalctl pour afficher les logs des 5 dernières minutes. Que révèlent-ils ?**
@@ -142,17 +146,23 @@ useradd ken
 - **Suivre les indications fournie par journalctl pour individualiser le problème. Combien de sources d'erreurs plausibles voyez-vous ? Qu'elles sont-elles et comment pourrions nous les résoudre ?**
 
 	journalctl nous liste 4 suggestions de sources d'erreurs.
-	++++
-
-- **Suivez la premier piste et tentez d'accéder à nouveau à la page web via curl. Queremarquez-vous et pourquoi ?**
+	1. Il n'est pas permis à http de lire dans le dossier home
+	2. Le traitement des fichiers par httpd n'est pas unifié
+	3. index.html est traité comme un élément privé et ne peux donc pas être lu
+	4. httpd n'a pas de getaddr access sur index.html par défaut
+	Pour résoudre ces problèmes on peux changer les valeurs des booléens SELinux tel que suggéré, ou générer de politiques de sécurité local tels qe suggéré également
+ 
+- **Suivez la premier piste et tentez d'accéder à nouveau à la page web via curl. Que remarquez-vous et pourquoi ?**
 
 	![](img/quickfix.png)
 
-Ca marche car nous avons résolu le problème le plus plausible qui causait l'erreur permission denied
+	On remarque que la commande curl a fonctionnée correctement car j'ai implémenté la solution proposée par la première suggestion. Cette solution a fonctionné, le serveur httpd est maintenant autorisé à lire le home directory et donc peut récupérer index.html.
+
+
 
 - **Listez les booléens locaux définis pour SELinux**
 
-	![](img/booleanList.png)
+	![](img/booleanList2.png)
 
 ### Franck, le petit frère de Ken, intègre à également l'équipe des Développeurs Web. Il estmoins expérimenté et sera principalement en charge d'écrire le contenu statique du site. Il va donc développer en local et demandera à l'administrateur de mettre son contenu enproduction le moment venu
 
@@ -184,8 +194,14 @@ Ca marche car nous avons résolu le problème le plus plausible qui causait l'er
 ### Observations finales sur SELinux 
 
 - **Qu'observez-vous et pourquoi ?**
+
 	![](img/OK1.png)
+
 	![](img/OK2.png)
+	
 	![](img/OK3.png)
 
-- **On n'arrive toujours pas à accéder à shadow...**
+- **Que se passe-t-il et pourquoi ?**
+
+On n'arrive toujours pas à accéder à shadow...
+SELinux empêche l'ouverture du fichier shadow. la commande cat n'a pas les droits pour ouvrir le fichier
