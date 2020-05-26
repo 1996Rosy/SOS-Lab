@@ -114,6 +114,7 @@ useradd ken
 	L'error_log précisent que les search permissions ne sont pas activées pour index.html c'est pourquoi l'accès nous est refusé.
 
 - **Utilisez journalctl pour afficher les logs des 5 dernières minutes. Que révèlent-ils ?**
+
 	![](img/journalctl.png)
 
 - **Suivre les indications fournie par journalctl pour individualiser le problème. Combien de sources d'erreurs plausibles voyez-vous ? Qu'elles sont-elles et comment pourrions nous les résoudre ?**
