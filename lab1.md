@@ -82,68 +82,87 @@ useradd ken
 	![](img/POSIX2.png)
 
 - **Ken peut à présent créer une page de test en exécutant la commande `echo 'Ken is always ready!' > /home/ken/public_html/index.html`. Quelles sont les permissions du fichier `/home/ken/public_html/index.html` ? Pourquoi ?**
+
 	![](img/POSIX3.png)
 
 	On constate que les droits d'execution ne se sont pas propagé. Mesure de sécurité?
 
 - **Vérifiez que cette page web est bien accessible localement avec `curl`**
+
 	![](img/curl.png)
 
 ### Durcissement avec SELinux
-- Activez SELinux en mode enforcing et redémarrez. Que remarquez-vous ? Pourquoi ?
+- **Activez SELinux en mode enforcing et redémarrez. Que remarquez-vous ? Pourquoi ?**
+
 	![](img/enforcing.png)
-- Installez setroubleshoot et setroubleshoot-server, puis redémarrez auditd
+
+- **Installez setroubleshoot et setroubleshoot-server, puis redémarrez auditd**
+
 	Les deux étaient déjà installés sur ma machine donc je n'ai pas eu besoin de les installer
-- Tentez d'accéder à nouveau à la page web avec curl. Que se passe-t-il ? Pourquoi ?
+
+- **Tentez d'accéder à nouveau à la page web avec curl. Que se passe-t-il ? Pourquoi ?**
+
 	![](img/curl2.png)
+
 	L'accès nous est interdit. SELinux nous bloque l'accès à cette page.
-- Analysez les journaux applicatifs access_log et error_log de httpd. Que révèlent-ils ?
+
+- **Analysez les journaux applicatifs access_log et error_log de httpd. Que révèlent-ils ?**
 	![](img/access_log.png)
 	![](img/error_log.png)
+
 	Ils révèlent l'échec de nos trois dernières tentatives de connexion.
 	L'error_log précisent que les search permissions ne sont pas activées pour index.html c'est pourquoi l'accès nous est refusé.
-- Utilisez journalctl pour afficher les logs des 5 dernières minutes. Que révèlent-ils ?
+
+- **Utilisez journalctl pour afficher les logs des 5 dernières minutes. Que révèlent-ils ?**
 	![](img/journalctl.png)
 
-- Suivre les indications fournie par journalctl pour individualiser le problème. Combien de sources d'erreurs plausibles voyez-vous ? Qu'elles sont-elles et comment pourrions nous les résoudre ?
+- **Suivre les indications fournie par journalctl pour individualiser le problème. Combien de sources d'erreurs plausibles voyez-vous ? Qu'elles sont-elles et comment pourrions nous les résoudre ?**
+
 	journalctl nous liste 4 suggestions de sources d'erreurs.
 	++++
 
-- Suivez la premier piste et tentez d'accéder à nouveau à la page web via curl. Queremarquez-vous et pourquoi ?
+- **Suivez la premier piste et tentez d'accéder à nouveau à la page web via curl. Queremarquez-vous et pourquoi ?**
+
 	![](img/quickfix.png)
+
 Ca marche car nous avons résolu le problème le plus plausible qui causait l'erreur permission denied
 
-- Listez les booléens locaux définis pour SELinux
+- **Listez les booléens locaux définis pour SELinux**
+
 	![](img/booleanList.png)
 
 ### Franck, le petit frère de Ken, intègre à également l'équipe des Développeurs Web. Il estmoins expérimenté et sera principalement en charge d'écrire le contenu statique du site. Il va donc développer en local et demandera à l'administrateur de mettre son contenu enproduction le moment venu
 
-- Franck demande à présent à l'administrateur de pousser son texte en production, quise contentera dans un premier temps d'exécuter la commande mv/home/franck/contenu/* /var/www/html/ avant de vérifier que son action étaitconcluante en accédant à http://localhost depuis Firefox. Quel est le résultat de ce test ?
+- **Franck demande à présent à l'administrateur de pousser son texte en production, quise contentera dans un premier temps d'exécuter la commande mv/home/franck/contenu/* /var/www/html/ avant de vérifier que son action étaitconcluante en accédant à http://localhost depuis Firefox. Quel est le résultat de ce test ?**
+
 	![](img/resultat.png)
 
-- L'administrateur réalise qu'il a effectué un déplacement du fichier de Franck, et non pas une simple copie. Il peut donc y avoir un problème avec le propriétaire du fichier.Depuis un shell tournant en tant que root, regardez qui détient le fichier/var/www/html/index.html puis apportez la modification nécessaire pour que root:root en soit le propriétaire
+- **L'administrateur réalise qu'il a effectué un déplacement du fichier de Franck, et non pas une simple copie. Il peut donc y avoir un problème avec le propriétaire du fichier.Depuis un shell tournant en tant que root, regardez qui détient le fichier/var/www/html/index.html puis apportez la modification nécessaire pour que root:root en soit le propriétaire**
+
 	![](img/owner.png)
 
-- Effectuez un nouveau test d'accès à http://localhost depuis Firefox ou curl. Que se passe-t-il ?
+- **Effectuez un nouveau test d'accès à http://localhost depuis Firefox ou curl. Que se passe-t-il ?**
 
 	Rien ne change...
 
-- Utilisez journalctl, sealert et ls pour diagnostiquer le problème. Quelle en est l'origine et pourquoi ?
+- **Utilisez journalctl, sealert et ls pour diagnostiquer le problème. Quelle en est l'origine et pourquoi ?**
+
 	![](img/journalctl2.png)
 
-- Comment auriez-vous pu éviter ce problème ?
+- **Comment auriez-vous pu éviter ce problème ?**
 	no idea
 
-- Comment pouvez-vous résoudre ce problème d'accès à présent ? Apportez la correction de votre choix, puis vérifier que vous pouvez bien accéder à http://localhost depuis curl.
+- **Comment pouvez-vous résoudre ce problème d'accès à présent ? Apportez la correction de votre choix, puis vérifier que vous pouvez bien accéder à http://localhost depuis curl.**
+
 	![](img/quickfix2.png)
 
 	![](img/fonctionne.png)
 
 ### Observations finales sur SELinux 
 
-- Qu'observez-vous et pourquoi ?
+- **Qu'observez-vous et pourquoi ?**
 	![](img/OK1.png)
 	![](img/OK2.png)
 	![](img/OK3.png)
 
-- On n'arrive toujours pas à accéder à shadow...
+- **On n'arrive toujours pas à accéder à shadow...**
